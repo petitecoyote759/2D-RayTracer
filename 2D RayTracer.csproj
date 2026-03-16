@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>RayTracer</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <StartupObject>RayTracer.General</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Altimesh.Hybridizer.Runtime.CUDAImports" Version="2.1.4" />
+    <PackageReference Include="ILGPU" Version="1.5.3" />
+    <PackageReference Include="ILGPU.Algorithms" Version="1.5.3" />
+    <PackageReference Include="Sayers.SDL2.Core" Version="1.0.11" />
+    <PackageReference Include="Short_Tools" Version="1.0.20" />
+  </ItemGroup>
+
+</Project>
