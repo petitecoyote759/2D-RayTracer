@@ -35,7 +35,9 @@ namespace RayTracer
             return map[x + (y * width)];
         }
 
-        public static void RunRays(Index1D i, ArrayView<int> map, ArrayView<float> angles, ArrayView<GPURay> output, float pX, float pY, int mapWidth, int mapHeight)
+        public static void RunRays(
+            Index1D i, ArrayView<int> map, ArrayView<float> angles, ArrayView<GPURay> output, 
+            float pX, float pY, int mapWidth, int mapHeight, int inHidden, ArrayView<int> randomValues)
         {
             GPURay ray = new GPURay();
 
@@ -45,7 +47,7 @@ namespace RayTracer
 
             float distance = -1f;
             float maxDist = 30f;
-            float iStep = 0.01f;
+            float iStep = 0.001f;
 
             float rayX = pX;
             float rayY = pY;
@@ -69,10 +71,9 @@ namespace RayTracer
                     distance = step;
                     break;
                 }
-                if (solidness == 2) // Solidness.Hidden
+                if (inHidden == 0 && solidness == 2) // Solidness.Hidden
                 {
-                    int modifier = (int)(rayX + rayY) * (int)(step / iStep);
-                    if ((modifier & 1) == 0) { break; }
+                    if (randomValues[(i + (int)(step / iStep)) % randomValues.Length] > 2) { break; }
                     distance = step;
                     break;
                 }

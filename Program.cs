@@ -51,6 +51,8 @@ namespace RayTracer
         public static bool DoBlackHoles = true;
         public static int[] GPUMap;
 
+        public static int[] randomValues = new int[256]; // 0 - 9 
+
         
 
         private static void Main(string[] args)
@@ -61,6 +63,11 @@ namespace RayTracer
                 int x = i % map.GetLength(0);
                 int y = i / map.GetLength(0);
                 GPUMap[i] = TileIsSolid(x, y);
+            }
+            Random random = new Random();
+            for (int i = 0; i < randomValues.Length; i++)
+            {
+                randomValues[i] = random.Next(0, 10);
             }
 
 

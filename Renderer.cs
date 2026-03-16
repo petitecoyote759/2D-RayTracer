@@ -25,8 +25,9 @@ namespace RayTracer
         private static float[] rayAnglesCPU;
         public static MemoryBuffer1D<GPURay, Stride1D.Dense> outputRays;
         private static GPURay[] outputRaysCPU;
+        private static MemoryBuffer1D<int, Stride1D.Dense> GPURandomValues;
 
-        public static Action<Index1D, ArrayView<int>, ArrayView<float>, ArrayView<GPURay>, float, float, int, int> RunRayCalculations;
+        public static Action<Index1D, ArrayView<int>, ArrayView<float>, ArrayView<GPURay>, float, float, int, int, int, ArrayView<int>> RunRayCalculations;
 
 
         public Renderer() : base(Flag.Auto_Draw_Clear)
@@ -74,7 +75,7 @@ namespace RayTracer
 
             RunRayCalculations = 
                 accelerator.LoadAutoGroupedStreamKernel
-                <Index1D, ArrayView<int>, ArrayView<float>, ArrayView<GPURay>, float, float, int, int>
+                <Index1D, ArrayView<int>, ArrayView<float>, ArrayView<GPURay>, float, float, int, int, int, ArrayView<int>>
                 (GPURayFunctions.RunRays);
 
 
@@ -90,13 +91,14 @@ namespace RayTracer
             rayAngles = accelerator.Allocate1D(rayAnglesCPU);
             outputRaysCPU = new GPURay[rayCount];
             outputRays = accelerator.Allocate1D(outputRaysCPU);
+            GPURandomValues = accelerator.Allocate1D(General.randomValues);
         }
 
 
         public float zoom = 70;
         const float raysPerDegree = 4;
         static int rayCount = -1;
-
+        static float maxRayDistance = 30f;
 
 
         public override void Render()
@@ -110,7 +112,7 @@ namespace RayTracer
             int yStart = (int)(Player.pos.Y - (screenheight / zoom)) - 1;
             int yEnd = (int)(Player.pos.Y + (screenheight / zoom)) + 1;
 
-            SDL2.SDL.SDL_SetRenderDrawColor(SDLrenderer, 255, 0, 0, 255);
+            SDL2.SDL.SDL_SetRenderDrawColor(SDLrenderer, 255, 0, 0, 40);
 
 
             //<Index1D, ArrayView<int>, ArrayView<float>, ArrayView<GPURay>, float, float, int, int>
@@ -128,7 +130,10 @@ namespace RayTracer
             outputRays.CopyFromCPU(outputRaysCPU);
 
             // All data is ready to process
-            RunRayCalculations((int)outputRays.Length, GPUMap.View, rayAngles.View, outputRays.View, Player.pos.X, Player.pos.Y, General.map.GetLength(0), General.map.GetLength(1));
+            RunRayCalculations(
+                (int)outputRays.Length, GPUMap.View, rayAngles.View, outputRays.View, 
+                Player.pos.X, Player.pos.Y, General.map.GetLength(0), General.map.GetLength(1), 
+                General.TileIsSolid(Player.pos) == (int)General.Solidness.Hidden ? 1 : 0, GPURandomValues.View);
 
             outputRaysCPU = outputRays.GetAsArray1D();
             foreach (GPURay ray in outputRaysCPU)
@@ -136,6 +141,10 @@ namespace RayTracer
                 if (ray.distance != -1)
                 {
                     Vector2 hitPoint = ray.distance * new Vector2(ray.xDir, ray.yDir);
+
+                    float scalar = MathF.Exp(-10 * (ray.distance / maxRayDistance));
+                    
+                    SDL2.SDL.SDL_SetRenderDrawColor(SDLrenderer, (byte)(255 * scalar), 0, 0, 255);
                     SDL2.SDL.SDL_RenderDrawPoint(SDLrenderer,
                         (int)(zoom * hitPoint.X) + (screenwidth / 2),
                         (int)(zoom * hitPoint.Y) + (screenheight / 2));
